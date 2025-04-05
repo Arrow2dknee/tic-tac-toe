@@ -7,22 +7,14 @@ function Square({ index, value, onClick }) {
   return <button className="square" onClick={handleClick}>{value}</button>
 }
 
-export default function Board() {
-  const [squares, setSquares] = useState(Array(9).fill(null));
-  const [turn, setTurn] = useState('X');
-
+function Board({ turn, squares, onPlay }) {
   function onButtonClick(position) {
     if (squares[position] || calculateWinner(squares)) {
       return;
     }
     const updatedSquares = squares.slice(); // immutability
     updatedSquares[position] = turn;
-    setSquares(updatedSquares);
-    if (turn === 'X') {
-      setTurn('O');
-    } else if (turn === 'O') {
-      setTurn('X');
-    }
+    onPlay(updatedSquares);
   }
 
   const win = calculateWinner(squares);
@@ -52,6 +44,51 @@ export default function Board() {
         <Square index={'8'} value={squares[8]} onClick={onButtonClick}/>
       </div>
     </>
+  );
+}
+
+export default function Game() {
+  const [step, setStep] = useState(0);
+  const [ history, setHistory ] = useState([Array(9).fill(null)]);
+  const currentSquares = history[step];
+  const turn = step % 2 === 0 ? "X" : "O";
+
+  function handlePlay(updatedSquares) {
+    const updatedHistory = [...history.slice(0, step + 1), updatedSquares];
+    setHistory(updatedHistory);
+    setStep(updatedHistory.length - 1);
+  }
+
+  function jumpTo(currentStep) {
+    setStep(currentStep);
+  }
+
+  return (
+    <div className="game">
+      <div className="game-board">
+        <Board turn={turn} squares={currentSquares} onPlay={handlePlay} />
+      </div>
+      <div className="game-info">
+        <ol>
+          {
+            history.map((squares, index) => {
+              let description = "";
+              if (index > 0) {
+                description = "Go to move #" + index;
+              } else {
+                description = "Go to start of the game";
+              }
+
+              return (index !== history.length - 1) && (
+                <li key={index}>
+                  <button onClick={() => jumpTo(index)}>{description}</button>
+                </li>
+              );  
+            })
+          }
+        </ol>
+      </div>
+    </div>
   );
 }
 
